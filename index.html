@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="es" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulador de Exámenes UPTAIET - Trayecto Inicial</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .fade-in {
+            animation: fadeIn 0.3s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .achievement-banner {
+            animation: slideDown 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        @keyframes slideDown {
+            from { transform: translateY(-100%); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col justify-between selection:bg-indigo-500 selection:text-white relative">
+
+    <div id="achievement-toast" class="hidden fixed top-4 left-1/2 -translate-x-1/2 z-50 w-11/12 max-w-md bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 p-4 rounded-2xl shadow-2xl border-2 border-amber-300 achievement-banner">
+        <div class="flex items-center space-x-3">
+            <div class="bg-slate-950/20 p-2 rounded-xl text-2xl">🏆</div>
+            <div>
+                <h4 class="font-extrabold text-sm uppercase tracking-wider text-slate-950">¡Nuevo Logro Desbloqueado!</h4>
+                <p id="achievement-text" class="text-xs font-semibold leading-tight text-slate-900">¡Mejoraste tu récord previo!</p>
+            </div>
+        </div>
+    </div>
+
+    <header class="bg-slate-800/90 backdrop-blur-md border-b border-slate-700/80 sticky top-0 z-40 shadow-md">
+        <div class="max-w-4xl mx-auto px-4 py-3 sm:py-4 flex flex-col sm:flex-row justify-between items-center gap-3">
+            <div class="flex items-center space-x-3 w-full sm:w-auto justify-between sm:justify-start">
+                <div class="flex items-center space-x-3">
+                    <div class="bg-indigo-600 text-white font-bold p-2.5 rounded-xl shadow-md flex items-center justify-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                        </svg>
+                    </div>
+                    <div>
+                        <h1 class="text-base sm:text-lg font-bold text-white tracking-wide">UPTAIET • Informática</h1>
+                        <p class="text-xs text-indigo-400 font-medium">Preparación Examen 1 - Trayecto Inicial</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quiz Selector Tabs -->
+            <div class="flex bg-slate-900 p-1 rounded-xl border border-slate-700/80 space-x-1 w-full sm:w-auto justify-center">
+                <button onclick="selectQuiz(1)" id="tab-btn-1" class="flex-1 sm:flex-none px-3 sm:px-4 py-2 text-xs font-semibold rounded-lg transition-all bg-indigo-600 text-white shadow">PDF 1</button>
+                <button onclick="selectQuiz(2)" id="tab-btn-2" class="flex-1 sm:flex-none px-3 sm:px-4 py-2 text-xs font-semibold rounded-lg transition-all text-slate-400 hover:text-white">PDF 2</button>
+                <button onclick="selectQuiz(3)" id="tab-btn-3" class="flex-1 sm:flex-none px-3 sm:px-4 py-2 text-xs font-semibold rounded-lg transition-all text-slate-400 hover:text-white">PDF 3</button>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-3xl mx-auto px-4 py-6 sm:py-8 flex-grow w-full flex flex-col justify-center">
+        
+        <!-- Banner Informativo con Record -->
+        <div class="bg-gradient-to-r from-indigo-900/60 via-slate-800 to-slate-800 border border-indigo-500/30 rounded-2xl p-5 sm:p-6 mb-6 shadow-xl flex flex-col sm:flex-row justify-between sm:items-center gap-4">
+            <div>
+                <h2 id="quiz-title" class="text-lg sm:text-xl font-bold text-white mb-1.5">PDF 1: Guía de Ejercicios Resueltos Paso a Paso</h2>
+                <p id="quiz-desc" class="text-slate-300 text-xs sm:text-sm leading-relaxed">Evaluación sobre el Rol del Desarrollador, la Misión Alma Mater y los Componentes del Sistema.</p>
+            </div>
+            <div class="bg-slate-900/80 p-3 rounded-xl border border-slate-700/70 text-center min-w-[120px] flex-shrink-0">
+                <span class="block text-[10px] uppercase font-extrabold text-indigo-400 tracking-wider">Mejor Récord</span>
+                <span id="best-score-display" class="text-lg font-black text-amber-400">---</span>
+            </div>
+        </div>
+
+        <!-- Indicador de Progreso -->
+        <div id="progress-container" class="mb-6">
+            <div class="flex justify-between items-center text-xs font-semibold text-slate-400 mb-2">
+                <span id="progress-text">Pregunta 1 de 3</span>
+                <span id="progress-percent" class="text-indigo-400">33%</span>
+            </div>
+            <div class="w-full bg-slate-800 h-2.5 rounded-full overflow-hidden border border-slate-700">
+                <div id="progress-bar" class="bg-gradient-to-r from-indigo-500 to-violet-500 h-full rounded-full transition-all duration-300 w-1/3"></div>
+            </div>
+        </div>
+
+        <!-- Vista de Pregunta Individual -->
+        <div id="question-card" class="bg-slate-800 border border-slate-700 rounded-2xl p-5 sm:p-7 shadow-xl fade-in space-y-6">
+            <div class="flex items-start space-x-3">
+                <span id="q-number" class="flex-shrink-0 bg-indigo-500/20 text-indigo-400 font-bold text-xs sm:text-sm px-2.5 py-1 rounded-lg border border-indigo-500/30">P1</span>
+                <h3 id="q-text" class="text-white font-semibold text-base sm:text-lg leading-snug">Cargando pregunta...</h3>
+            </div>
+
+            <!-- Opciones de respuesta -->
+            <div id="options-container" class="space-y-3">
+                <!-- Inyectado vía JS -->
+            </div>
+
+            <!-- Retroalimentación inmediata -->
+            <div id="instant-feedback" class="hidden p-4 rounded-xl text-xs sm:text-sm border fade-in"></div>
+
+            <!-- Botón Siguiente Pregunta -->
+            <div class="flex justify-end pt-2">
+                <button id="next-btn" onclick="nextQuestion()" disabled class="w-full sm:w-auto px-6 py-2.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold rounded-xl transition-all shadow-md flex items-center justify-center space-x-2 text-sm">
+                    <span>Siguiente Pregunta</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <div id="final-summary" class="hidden space-y-6 fade-in">
+            <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 sm:p-8 shadow-2xl text-center space-y-4">
+                <div id="score-circle" class="inline-flex items-center justify-center w-24 h-24 rounded-full bg-indigo-500/10 border-4 border-indigo-500 text-indigo-400 font-extrabold text-3xl shadow-inner">
+                    0%
+                </div>
+                <h3 id="result-message" class="text-xl sm:text-2xl font-bold text-white">¡Examen Evaluado!</h3>
+                <p id="result-detail" class="text-xs sm:text-sm text-slate-300 max-w-lg mx-auto leading-relaxed"></p>
+                
+                <div class="pt-2">
+                    <button onclick="restartCurrentQuiz()" class="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-xl transition-all shadow-lg text-xs sm:text-sm">
+                        Reintentar Este Cuestionario
+                    </button>
+                </div>
+            </div>
+
+            <!-- Lista completa de revisión -->
+            <div class="bg-slate-800 border border-slate-700 rounded-2xl p-5 sm:p-6 shadow-xl space-y-4">
+                <h4 class="text-base sm:text-lg font-bold text-white flex items-center space-x-2 border-b border-slate-700 pb-3">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 002 2h2a2 2 0 002-2" />
+                    </svg>
+                    <span>Resumen Completo del Examen</span>
+                </h4>
+                <div id="summary-list" class="space-y-4">
+                    <!-- Inyectado vía JS -->
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <footer class="bg-slate-800/80 border-t border-slate-700/80 py-6 px-4 text-center text-xs text-slate-400">
+        <div class="max-w-4xl mx-auto space-y-2">
+            <p class="font-medium text-slate-300">
+                © 2026 anyorver. Todos los derechos reservados.
+            </p>
+            <p class="text-slate-400">
+                Contacto: <a href="mailto:anyorver@gmail.com" class="text-indigo-400 hover:underline transition-all">anyorver@gmail.com</a>
+            </p>
+        </div>
+    </footer>
+
+    <script>
+        // Cuestionarios extraídos exclusivamente de los PDFs oficiales
+        const quizData = {
+            1: {
+                title: "PDF 1: Guía de Ejercicios Resueltos Paso a Paso",
+                desc: "Evaluación sobre el Rol del Desarrollador, la Misión Alma Mater y los Componentes del Sistema.",
+                questions: [
+                    {
+                        id: 1,
+                        question: "Según el texto y el mapa conceptual del Caso 1, ¿cuál es el objetivo principal del desarrollador de software en la sociedad?",
+                        options: [
+                            { key: 'a', text: "Vender equipos de computación a las empresas agrícolas." },
+                            { key: 'b', text: "Analizar necesidades reales y construir soluciones tecnológicas comunitarias." },
+                            { key: 'c', text: "Instalar programas de oficina y formatear computadoras." }
+                        ],
+                        correct: 'b',
+                        justification: "La informática busca transformar el entorno social resolviendo problemas reales, no solo el mantenimiento físico de equipos."
+                    },
+                    {
+                        id: 2,
+                        question: "¿Qué elemento caracteriza el nuevo modelo académico del PNFI en la UPTAIET frente a la educación tradicional?",
+                        options: [
+                            { key: 'a', text: "Que las carreras son únicamente teóricas y sin prácticas." },
+                            { key: 'b', text: "La integración del Proyecto Sociotecnológico como eje central de formación en la comunidad." },
+                            { key: 'c', text: "La eliminación de los servicios de bienestar estudiantil." }
+                        ],
+                        correct: 'b',
+                        justification: "El PNF coloca al Proyecto Sociotecnológico como el núcleo central para resolver problemas locales desde el primer año."
+                    },
+                    {
+                        id: 3,
+                        question: "Al construir un Mapa Conceptual sobre los componentes del computador, ¿cómo deben colocarse 'Hardware' y 'Software'?",
+                        options: [
+                            { key: 'a', text: "Uno dentro de otro en la misma casilla." },
+                            { key: 'b', text: "En el mismo nivel jerárquico secundario, derivados del concepto principal 'Sistema Informático'." },
+                            { key: 'c', text: "Sin palabras de enlace entre ellos." }
+                        ],
+                        correct: 'b',
+                        justification: "Al tener la misma importancia dentro del sistema, forman una clasificación doble paralela en el segundo nivel jerárquico."
+                    }
+                ]
+            },
+            2: {
+                title: "PDF 2: Guía Práctica de Aula y Repaso Completa",
+                desc: "Evaluación sobre el Proyecto Sociotecnológico (PST) y la metodología de Mapas Conceptuales.",
+                questions: [
+                    {
+                        id: 1,
+                        question: "¿Cuál es el primer paso metodológico para elaborar un mapa conceptual a partir de un texto?",
+                        options: [
+                            { key: 'a', text: "Hacer los cuadros y dibujos con colores en la hoja." },
+                            { key: 'b', text: "Leer detenidamente y subrayar los conceptos clave (sustantivos)." },
+                            { key: 'c', text: "Memorizar todo el texto palabra por palabra." }
+                        ],
+                        correct: 'b',
+                        justification: "La prelectura y subrayado selectivo es la base para extraer conceptos sin saturar el mapa."
+                    },
+                    {
+                        id: 2,
+                        question: "¿Qué diferencia principal existe entre un Mapa Conceptual y un Mapa Mental?",
+                        options: [
+                            { key: 'a', text: "El mapa conceptual solo se usa en matemáticas." },
+                            { key: 'b', text: "El mapa conceptual es jerárquico vertical y exige conectores explícitos sobre las líneas." },
+                            { key: 'c', text: "El mapa mental no permite usar palabras." }
+                        ],
+                        correct: 'b',
+                        justification: "Las palabras de enlace sobre las líneas conectoras son la regla de oro obligatoria del mapa conceptual."
+                    }
+                ]
+            },
+            3: {
+                title: "PDF 3: Módulo de Repaso General y Ruta YouTube",
+                desc: "Evaluación sobre reglas de oro, bienestar estudiantil y conceptos generales de la unidad.",
+                questions: [
+                    {
+                        id: 1,
+                        question: "Según las Reglas de Oro del Mapa Conceptual, ¿cuántas palabras como máximo se recomiendan por cuadro o casilla?",
+                        options: [
+                            { key: 'a', text: "De 1 a 3 palabras." },
+                            { key: 'b', text: "Un párrafo completo de 5 líneas." },
+                            { key: 'c', text: "Exactamente 10 palabras técnicas." }
+                        ],
+                        correct: 'a',
+                        justification: "La regla de oro 1 indica utilizar de 1 a 3 palabras por cuadro, evitando copiar párrafos enteros."
+                    },
+                    {
+                        id: 2,
+                        question: "¿Cuál de los siguientes servicios pertenece al Área de Bienestar Estudiantil de la UPTAIET?",
+                        options: [
+                            { key: 'a', text: "Servicios socioeconómicos, orientación y atención de salud primaria." },
+                            { key: 'b', text: "Venta de licencias de software comercial privado." },
+                            { key: 'c', text: "Tramitación de visas internacionales de trabajo." }
+                        ],
+                        correct: 'a',
+                        justification: "El bienestar estudiantil comprende servicios socioeconómicos, salud, deporte, cultura y orientación para garantizar el desempeño."
+                    },
+                    {
+                        id: 3,
+                        question: "En la proposición de un mapa conceptual (Concepto 1 + Palabra Enlace + Concepto 2), ¿cómo debe ser la palabra de enlace?",
+                        options: [
+                            { key: 'a', text: "Un sustantivo largo con la definición completa del tema." },
+                            { key: 'b', text: "Un verbo o conector corto que indique la relación precisa entre ambos conceptos." },
+                            { key: 'c', text: "El título general del texto leído." }
+                        ],
+                        correct: 'b',
+                        justification: "Las palabras de enlace explican la relación lógica entre conceptos y deben ser claras y cortas."
+                    }
+                ]
+            }
+        };
+
+        let currentQuizId = 1;
+        let currentQuestionIndex = 0;
+        let userAnswers = {};
+        let isOptionSelected = false;
+
+        function selectQuiz(quizNum) {
+            currentQuizId = quizNum;
+            restartCurrentQuiz();
+
+            for (let i = 1; i <= 3; i++) {
+                const btn = document.getElementById(`tab-btn-${i}`);
+                if (i === quizNum) {
+                    btn.className = "flex-1 sm:flex-none px-3 sm:px-4 py-2 text-xs font-semibold rounded-lg transition-all bg-indigo-600 text-white shadow";
+                } else {
+                    btn.className = "flex-1 sm:flex-none px-3 sm:px-4 py-2 text-xs font-semibold rounded-lg transition-all text-slate-400 hover:text-white";
+                }
+            }
+
+            document.getElementById('quiz-title').innerText = quizData[quizNum].title;
+            document.getElementById('quiz-desc').innerText = quizData[quizNum].desc;
+            updateBestScoreDisplay();
+        }
+
+        function updateBestScoreDisplay() {
+            const bestScore = localStorage.getItem(`uptaiet_quiz_best_${currentQuizId}`);
+            const display = document.getElementById('best-score-display');
+            if (bestScore !== null) {
+                display.innerText = `${bestScore}%`;
+            } else {
+                display.innerText = "---";
+            }
+        }
+
+        function restartCurrentQuiz() {
+            currentQuestionIndex = 0;
+            userAnswers = {};
+            isOptionSelected = false;
+
+            document.getElementById('question-card').classList.remove('hidden');
+            document.getElementById('progress-container').classList.remove('hidden');
+            document.getElementById('final-summary').classList.add('hidden');
+
+            renderCurrentQuestion();
+        }
+
+        function renderCurrentQuestion() {
+            const quiz = quizData[currentQuizId];
+            const q = quiz.questions[currentQuestionIndex];
+            const total = quiz.questions.length;
+
+            isOptionSelected = false;
+
+            const progressPercent = Math.round(((currentQuestionIndex + 1) / total) * 100);
+            document.getElementById('progress-text').innerText = `Pregunta ${currentQuestionIndex + 1} de ${total}`;
+            document.getElementById('progress-percent').innerText = `${progressPercent}%`;
+            document.getElementById('progress-bar').style.width = `${progressPercent}%`;
+
+            const qCard = document.getElementById('question-card');
+            qCard.classList.remove('fade-in');
+            void qCard.offsetWidth;
+            qCard.classList.add('fade-in');
+
+            document.getElementById('q-number').innerText = `P${currentQuestionIndex + 1}`;
+            document.getElementById('q-text').innerText = q.question;
+
+            const nextBtn = document.getElementById('next-btn');
+            nextBtn.disabled = true;
+            nextBtn.querySelector('span').innerText = (currentQuestionIndex === total - 1) ? "Finalizar y Ver Resumen" : "Siguiente Pregunta";
+
+            const feedbackDiv = document.getElementById('instant-feedback');
+            feedbackDiv.className = "hidden p-4 rounded-xl text-xs sm:text-sm border fade-in";
+            feedbackDiv.innerHTML = "";
+
+            const container = document.getElementById('options-container');
+            let html = '';
+
+            q.options.forEach(opt => {
+                html += `
+                    <button onclick="handleOptionSelect('${opt.key}')" id="opt-btn-${opt.key}" class="w-full text-left p-3.5 sm:p-4 rounded-xl border border-slate-700 bg-slate-900/60 hover:bg-slate-700/50 hover:border-indigo-500/50 transition-all flex items-start space-x-3 group">
+                        <span class="flex-shrink-0 w-6 h-6 rounded-lg bg-slate-800 border border-slate-600 text-indigo-400 font-bold text-xs flex items-center justify-center uppercase group-hover:bg-indigo-600 group-hover:text-white group-hover:border-indigo-600 transition-all">${opt.key}</span>
+                        <span class="text-xs sm:text-sm text-slate-200 group-hover:text-white pt-0.5 leading-relaxed">${opt.text}</span>
+                    </button>
+                `;
+            });
+
+            container.innerHTML = html;
+        }
+
+        function handleOptionSelect(key) {
+            if (isOptionSelected) return;
+            isOptionSelected = true;
+
+            const quiz = quizData[currentQuizId];
+            const q = quiz.questions[currentQuestionIndex];
+            userAnswers[currentQuestionIndex] = key;
+
+            const isCorrect = key === q.correct;
+            const feedbackDiv = document.getElementById('instant-feedback');
+            const selectedBtn = document.getElementById(`opt-btn-${key}`);
+
+            if (isCorrect) {
+                selectedBtn.className = "w-full text-left p-3.5 sm:p-4 rounded-xl border-2 border-emerald-500 bg-emerald-950/30 flex items-start space-x-3 transition-all";
+                feedbackDiv.className = "p-4 rounded-xl text-xs sm:text-sm border border-emerald-500/40 bg-emerald-950/40 text-emerald-300 fade-in";
+                feedbackDiv.innerHTML = `<div class="font-bold flex items-center space-x-2 mb-1">
+                    <span>¡Respuesta Correcta! 🎉</span>
+                </div>
+                <div>${q.justification}</div>`;
+            } else {
+                selectedBtn.className = "w-full text-left p-3.5 sm:p-4 rounded-xl border-2 border-rose-500 bg-rose-950/30 flex items-start space-x-3 transition-all";
+                
+                const correctBtn = document.getElementById(`opt-btn-${q.correct}`);
+                if (correctBtn) {
+                    correctBtn.className = "w-full text-left p-3.5 sm:p-4 rounded-xl border-2 border-emerald-500/70 bg-emerald-950/20 flex items-start space-x-3 transition-all";
+                }
+
+                feedbackDiv.className = "p-4 rounded-xl text-xs sm:text-sm border border-rose-500/40 bg-rose-950/40 text-rose-300 fade-in";
+                feedbackDiv.innerHTML = `<div class="font-bold flex items-center space-x-2 mb-1">
+                    <span>Respuesta Incorrecta ❌</span>
+                </div>
+                <div>La opción correcta era la <strong>(${q.correct.toUpperCase()})</strong>. ${q.justification}</div>`;
+            }
+
+            q.options.forEach(opt => {
+                const btn = document.getElementById(`opt-btn-${opt.key}`);
+                btn.onclick = null;
+                btn.classList.remove('hover:bg-slate-700/50', 'hover:border-indigo-500/50', 'cursor-pointer');
+                btn.classList.add('cursor-default');
+            });
+
+            feedbackDiv.classList.remove('hidden');
+            document.getElementById('next-btn').disabled = false;
+        }
+
+        function nextQuestion() {
+            const quiz = quizData[currentQuizId];
+            if (currentQuestionIndex < quiz.questions.length - 1) {
+                currentQuestionIndex++;
+                renderCurrentQuestion();
+            } else {
+                showFinalSummary();
+            }
+        }
+
+        function showFinalSummary() {
+            document.getElementById('question-card').classList.add('hidden');
+            document.getElementById('progress-container').classList.add('hidden');
+
+            const quiz = quizData[currentQuizId];
+            let score = 0;
+            let summaryHtml = '';
+
+            quiz.questions.forEach((q, idx) => {
+                const userAns = userAnswers[idx];
+                const isCorrect = userAns === q.correct;
+                if (isCorrect) score++;
+
+                const userOptObj = q.options.find(o => o.key === userAns);
+                const correctOptObj = q.options.find(o => o.key === q.correct);
+
+                summaryHtml += `
+                    <div class="p-4 rounded-xl border ${isCorrect ? 'bg-slate-900/50 border-emerald-500/40' : 'bg-slate-900/50 border-rose-500/40'} space-y-2 text-xs sm:text-sm">
+                        <div class="flex items-start justify-between gap-2">
+                            <p class="font-semibold text-white"><span class="text-indigo-400 mr-1">${idx + 1}.</span> ${q.question}</p>
+                            <span class="flex-shrink-0 px-2 py-0.5 rounded text-[11px] font-bold uppercase ${isCorrect ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-rose-500/20 text-rose-400 border border-rose-500/30'}">
+                                ${isCorrect ? 'Correcta' : 'Incorrecta'}
+                            </span>
+                        </div>
+                        
+                        <div class="pl-3 border-l-2 ${isCorrect ? 'border-emerald-500/50' : 'border-rose-500/50'} space-y-1 text-slate-300">
+                            <p><strong>Tu respuesta:</strong> <span class="${isCorrect ? 'text-emerald-300 font-medium' : 'text-rose-300 font-medium'}">(${userAns.toUpperCase()}) ${userOptObj ? userOptObj.text : ''}</span></p>
+                            ${!isCorrect ? `<p><strong>Respuesta correcta:</strong> <span class="text-emerald-300 font-medium">(${q.correct.toUpperCase()}) ${correctOptObj ? correctOptObj.text : ''}</span></p>` : ''}
+                            <p class="text-slate-400 text-xs pt-1"><em>${q.justification}</em></p>
+                        </div>
+                    </div>
+                `;
+            });
+
+            const percentage = Math.round((score / quiz.questions.length) * 100);
+
+            // Gestión de récord y logros
+            const previousBest = localStorage.getItem(`uptaiet_quiz_best_${currentQuizId}`);
+            let isNewAchievement = false;
+
+            if (previousBest === null || percentage > parseInt(previousBest)) {
+                localStorage.setItem(`uptaiet_quiz_best_${currentQuizId}`, percentage);
+                isNewAchievement = true;
+            }
+
+            updateBestScoreDisplay();
+
+            if (isNewAchievement) {
+                showAchievementToast(previousBest === null 
+                    ? `¡Primer intento completado en ${quizData[currentQuizId].title.split(':')[0]} con ${percentage}%!` 
+                    : `¡Superaste tu récord anterior de ${previousBest}% subiendo a ${percentage}%! 🔥`
+                );
+            }
+
+            const scoreCircle = document.getElementById('score-circle');
+            scoreCircle.innerText = `${percentage}%`;
+
+            const message = document.getElementById('result-message');
+            const detail = document.getElementById('result-detail');
+
+            if (percentage === 100) {
+                message.innerText = "¡Puntaje Perfecto! 🚀";
+                detail.innerText = `Dominaste el cuestionario respondiendo ${score} de ${quiz.questions.length} preguntas correctamente (${percentage}%). ¡Excelente preparación!`;
+                scoreCircle.className = "inline-flex items-center justify-center w-24 h-24 rounded-full bg-emerald-500/10 border-4 border-emerald-500 text-emerald-400 font-extrabold text-3xl shadow-inner";
+            } else if (percentage >= 60) {
+                message.innerText = "¡Buen Trabajo! 👍";
+                detail.innerText = `Obtuviste ${score} de ${quiz.questions.length} aciertos (${percentage}%). Revisa las observaciones para perfeccionar tus conceptos.`;
+                scoreCircle.className = "inline-flex items-center justify-center w-24 h-24 rounded-full bg-amber-500/10 border-4 border-amber-500 text-amber-400 font-extrabold text-3xl shadow-inner";
+            } else {
+                message.innerText = "Necesitas Repasar Más 📚";
+                detail.innerText = `Obtuviste ${score} de ${quiz.questions.length} aciertos (${percentage}%). Te recomendamos repasar el contenido del PDF y volver a intentarlo.`;
+                scoreCircle.className = "inline-flex items-center justify-center w-24 h-24 rounded-full bg-rose-500/10 border-4 border-rose-500 text-rose-400 font-extrabold text-3xl shadow-inner";
+            }
+
+            document.getElementById('summary-list').innerHTML = summaryHtml;
+            document.getElementById('final-summary').classList.remove('hidden');
+        }
+
+        function showAchievementToast(text) {
+            const toast = document.getElementById('achievement-toast');
+            document.getElementById('achievement-text').innerText = text;
+            toast.classList.remove('hidden');
+
+            setTimeout(() => {
+                toast.classList.add('hidden');
+            }, 4500);
+        }
+
+        window.onload = function() {
+            selectQuiz(1);
+        };
+    </script>
+</body>
+</html>
