@@ -17,6 +17,8 @@
         }
         .achievement-banner {
             animation: slideDown 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            touch-action: pan-y;
+            transition: transform 0.2s ease-out, opacity 0.2s ease-out;
         }
         @keyframes slideDown {
             from { transform: translateY(-100%); opacity: 0; }
@@ -26,18 +28,23 @@
 </head>
 <body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col justify-between selection:bg-indigo-500 selection:text-white relative">
 
-    <div id="achievement-toast" class="hidden fixed top-4 left-1/2 -translate-x-1/2 z-50 w-11/12 max-w-md bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 p-4 rounded-2xl shadow-2xl border-2 border-amber-300 achievement-banner">
-        <div class="flex items-center space-x-3">
-            <div class="bg-slate-950/20 p-2 rounded-xl text-2xl">🏆</div>
-            <div>
-                <h4 class="font-extrabold text-sm uppercase tracking-wider text-slate-950">¡Nuevo Logro Desbloqueado!</h4>
-                <p id="achievement-text" class="text-xs font-semibold leading-tight text-slate-900">¡Mejoraste tu récord previo!</p>
+    <!-- Notificación de Logro (Deslizable tipo Android) -->
+    <div id="achievement-toast" class="hidden fixed top-4 left-1/2 -translate-x-1/2 z-50 w-11/12 max-w-md bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 p-4 rounded-2xl shadow-2xl border-2 border-amber-300 achievement-banner cursor-grab active:cursor-grabbing select-none">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="bg-slate-950/20 p-2 rounded-xl text-2xl">🏆</div>
+                <div>
+                    <h4 class="font-extrabold text-sm uppercase tracking-wider text-slate-950">¡Nuevo Récord Alcanzado!</h4>
+                    <p id="achievement-text" class="text-xs font-semibold leading-tight text-slate-900">¡Mejoraste tu desempeño previo!</p>
+                </div>
             </div>
+            <button onclick="hideAchievementToast()" class="text-slate-950/70 hover:text-slate-950 p-1 text-lg font-bold">✕</button>
         </div>
+        <div class="text-[10px] text-slate-900/70 font-bold text-right mt-1">👉 Desliza a la derecha para descartar</div>
     </div>
 
     <header class="bg-slate-800/90 backdrop-blur-md border-b border-slate-700/80 sticky top-0 z-40 shadow-md">
-        <div class="max-w-4xl mx-auto px-4 py-3 sm:py-4 flex flex-col sm:flex-row justify-between items-center gap-3">
+        <div class="max-w-5xl mx-auto px-4 py-3 sm:py-4 flex flex-col sm:flex-row justify-between items-center gap-3">
             <div class="flex items-center space-x-3 w-full sm:w-auto justify-between sm:justify-start">
                 <div class="flex items-center space-x-3">
                     <div class="bg-indigo-600 text-white font-bold p-2.5 rounded-xl shadow-md flex items-center justify-center">
@@ -52,56 +59,179 @@
                 </div>
             </div>
 
-            <!-- Quiz Selector Tabs -->
-            <div class="flex bg-slate-900 p-1 rounded-xl border border-slate-700/80 space-x-1 w-full sm:w-auto justify-center">
-                <button onclick="selectQuiz(1)" id="tab-btn-1" class="flex-1 sm:flex-none px-3 sm:px-4 py-2 text-xs font-semibold rounded-lg transition-all bg-indigo-600 text-white shadow">PDF 1</button>
-                <button onclick="selectQuiz(2)" id="tab-btn-2" class="flex-1 sm:flex-none px-3 sm:px-4 py-2 text-xs font-semibold rounded-lg transition-all text-slate-400 hover:text-white">PDF 2</button>
-                <button onclick="selectQuiz(3)" id="tab-btn-3" class="flex-1 sm:flex-none px-3 sm:px-4 py-2 text-xs font-semibold rounded-lg transition-all text-slate-400 hover:text-white">PDF 3</button>
+            <!-- Selector de Cuestionarios Sincronizado -->
+            <div class="flex flex-wrap bg-slate-900 p-1 rounded-xl border border-slate-700/80 gap-1 w-full sm:w-auto justify-center">
+                <button onclick="selectQuiz(1)" id="tab-btn-1" class="px-3 py-1.5 text-xs font-semibold rounded-lg transition-all bg-indigo-600 text-white shadow">PDF 1</button>
+                <button onclick="selectQuiz(2)" id="tab-btn-2" class="px-3 py-1.5 text-xs font-semibold rounded-lg transition-all text-slate-400 hover:text-white">PDF 2</button>
+                <button onclick="selectQuiz(3)" id="tab-btn-3" class="px-3 py-1.5 text-xs font-semibold rounded-lg transition-all text-slate-400 hover:text-white">PDF 3</button>
+                <button onclick="togglePlusSection()" id="tab-btn-plus" class="px-3 py-1.5 text-xs font-bold rounded-lg transition-all bg-amber-500/20 text-amber-300 border border-amber-500/40 hover:bg-amber-500/30">✨ PLUS Material</button>
             </div>
         </div>
     </header>
 
-    <main class="max-w-3xl mx-auto px-4 py-6 sm:py-8 flex-grow w-full flex flex-col justify-center">
-        
-        <!-- Banner Informativo con Record -->
-        <div class="bg-gradient-to-r from-indigo-900/60 via-slate-800 to-slate-800 border border-indigo-500/30 rounded-2xl p-5 sm:p-6 mb-6 shadow-xl flex flex-col sm:flex-row justify-between sm:items-center gap-4">
-            <div>
-                <h2 id="quiz-title" class="text-lg sm:text-xl font-bold text-white mb-1.5">PDF 1: Guía de Ejercicios Resueltos Paso a Paso</h2>
-                <p id="quiz-desc" class="text-slate-300 text-xs sm:text-sm leading-relaxed">Evaluación sobre el Rol del Desarrollador, la Misión Alma Mater y los Componentes del Sistema.</p>
+    <main class="max-w-4xl mx-auto px-4 py-6 sm:py-8 flex-grow w-full flex flex-col justify-center">
+
+        <!-- DASHBOARD DE PROGRESO GENERAL Y ESTUDIO -->
+        <div class="bg-gradient-to-r from-slate-800 to-indigo-950/50 border border-slate-700/80 rounded-2xl p-5 mb-6 shadow-xl">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div class="space-y-1">
+                    <div class="flex items-center space-x-2">
+                        <span class="text-indigo-400 text-lg">📊</span>
+                        <h3 class="text-base font-bold text-white">Progreso General del Estudiante</h3>
+                    </div>
+                    <p class="text-xs text-slate-300">Rendimiento global acumulado analizando todos los cuestionarios del simulador.</p>
+                </div>
+                <div class="flex items-center space-x-4 bg-slate-900/90 px-4 py-2.5 rounded-xl border border-slate-700/80 w-full md:w-auto justify-between md:justify-start">
+                    <div>
+                        <span class="block text-[10px] uppercase font-bold text-slate-400">Dominio del Simulador</span>
+                        <span id="global-progress-percent" class="text-xl font-extrabold text-emerald-400">0%</span>
+                    </div>
+                    <div class="h-8 w-px bg-slate-700"></div>
+                    <div>
+                        <span class="block text-[10px] uppercase font-bold text-slate-400">Estado</span>
+                        <span id="global-status-tag" class="text-xs font-bold px-2 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700">En Curso</span>
+                    </div>
+                </div>
             </div>
-            <div class="bg-slate-900/80 p-3 rounded-xl border border-slate-700/70 text-center min-w-[120px] flex-shrink-0">
+
+            <!-- Desglose Mini Récords -->
+            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2 mt-4 pt-3 border-t border-slate-700/60 text-center text-xs">
+                <div class="bg-slate-900/60 p-2 rounded-lg border border-slate-800">
+                    <span class="block text-[10px] text-slate-400 font-medium">PDF 1</span>
+                    <span id="score-badge-1" class="font-bold text-indigo-300">---</span>
+                </div>
+                <div class="bg-slate-900/60 p-2 rounded-lg border border-slate-800">
+                    <span class="block text-[10px] text-slate-400 font-medium">PDF 2</span>
+                    <span id="score-badge-2" class="font-bold text-indigo-300">---</span>
+                </div>
+                <div class="bg-slate-900/60 p-2 rounded-lg border border-slate-800">
+                    <span class="block text-[10px] text-slate-400 font-medium">PDF 3</span>
+                    <span id="score-badge-3" class="font-bold text-indigo-300">---</span>
+                </div>
+                <div class="bg-slate-900/60 p-2 rounded-lg border border-slate-800">
+                    <span class="block text-[10px] text-amber-400 font-medium">Tarea</span>
+                    <span id="score-badge-4" class="font-bold text-amber-300">---</span>
+                </div>
+                <div class="bg-slate-900/60 p-2 rounded-lg border border-slate-800">
+                    <span class="block text-[10px] text-amber-400 font-medium">Por Si Acaso</span>
+                    <span id="score-badge-5" class="font-bold text-amber-300">---</span>
+                </div>
+                <div class="bg-slate-900/60 p-2 rounded-lg border border-slate-800">
+                    <span class="block text-[10px] text-rose-400 font-medium">Examen Real</span>
+                    <span id="score-badge-6" class="font-bold text-rose-300">---</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Banner Informativo -->
+        <div class="bg-slate-800/90 border border-indigo-500/30 rounded-2xl p-5 sm:p-6 mb-6 shadow-xl flex flex-col sm:flex-row justify-between sm:items-center gap-4">
+            <div>
+                <h2 id="quiz-title" class="text-lg sm:text-xl font-bold text-white mb-1.5">Cargando evaluación...</h2>
+                <p id="quiz-desc" class="text-slate-300 text-xs sm:text-sm leading-relaxed">Selecciona una opción para comenzar a practicar.</p>
+            </div>
+            <div class="bg-slate-900/90 p-3 rounded-xl border border-slate-700/70 text-center min-w-[120px] flex-shrink-0">
                 <span class="block text-[10px] uppercase font-extrabold text-indigo-400 tracking-wider">Mejor Récord</span>
                 <span id="best-score-display" class="text-lg font-black text-amber-400">---</span>
             </div>
         </div>
 
-        <!-- Indicador de Progreso -->
-        <div id="progress-container" class="mb-6">
-            <div class="flex justify-between items-center text-xs font-semibold text-slate-400 mb-2">
-                <span id="progress-text">Pregunta 1 de 3</span>
-                <span id="progress-percent" class="text-indigo-400">33%</span>
-            </div>
-            <div class="w-full bg-slate-800 h-2.5 rounded-full overflow-hidden border border-slate-700">
-                <div id="progress-bar" class="bg-gradient-to-r from-indigo-500 to-violet-500 h-full rounded-full transition-all duration-300 w-1/3"></div>
+        <!-- SECCIÓN PLUS: COMPENDIO TOTAL DE ESTUDIO Y CUESTIONARIOS EXTRA -->
+        <div id="plus-material-section" class="hidden mb-8 space-y-6 fade-in">
+            <div class="bg-slate-800 border-2 border-amber-500/50 rounded-2xl p-6 shadow-2xl space-y-6">
+                <div class="flex items-center justify-between border-b border-slate-700 pb-4">
+                    <div class="flex items-center space-x-3">
+                        <span class="bg-amber-500 text-slate-950 font-black px-2.5 py-1 rounded-lg text-sm uppercase">PLUS COMPENDIO</span>
+                        <div>
+                            <h3 class="text-lg font-extrabold text-white">Resumen Total de Materiales y Ejemplos de Tarea</h3>
+                            <p class="text-xs text-slate-300">Resumen exclusivo extraído del Módulo N°1, Guía Práctica de Aula y Ejemplos de Mapas Conceptuales.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Accesos Rápidos dentro de PLUS -->
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-slate-900/80 p-4 rounded-xl border border-amber-500/30">
+                    <button onclick="selectQuiz(4)" class="p-3 bg-slate-800 hover:bg-slate-700 border border-indigo-500/40 rounded-xl text-left transition-all group">
+                        <div class="text-[10px] font-bold text-indigo-400 uppercase tracking-wider mb-1">Cuestionario Tareas</div>
+                        <div class="text-xs font-semibold text-white group-hover:text-amber-300">📝 Quiz Tarea PDF</div>
+                    </button>
+                    <button onclick="selectQuiz(5)" class="p-3 bg-slate-800 hover:bg-slate-700 border border-amber-500/40 rounded-xl text-left transition-all group">
+                        <div class="text-[10px] font-bold text-amber-400 uppercase tracking-wider mb-1">Evaluación Prevención</div>
+                        <div class="text-xs font-semibold text-white group-hover:text-amber-300">🛡️ Quiz Por Si Acaso</div>
+                    </button>
+                    <button onclick="selectQuiz(6)" class="p-3 bg-slate-800 hover:bg-slate-700 border border-rose-500/40 rounded-xl text-left transition-all group">
+                        <div class="text-[10px] font-bold text-rose-400 uppercase tracking-wider mb-1">Simulación Completa</div>
+                        <div class="text-xs font-semibold text-white group-hover:text-amber-300">🔥 Quiz Examen Real</div>
+                    </button>
+                </div>
+
+                <div class="space-y-3">
+                    <h4 class="text-sm font-bold text-amber-400 uppercase tracking-wide">1. Conceptos Teóricos Fundamentales</h4>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+                        <div class="bg-slate-900/90 p-3.5 rounded-xl border border-slate-700">
+                            <span class="font-bold text-indigo-300 block mb-1">De Alumno a Participante:</span>
+                            <strong>Alumno:</strong> Término tradicional que proviene de "sin luz". Actitud pasiva.<br>
+                            <strong>Participante:</strong> Adulto activo, crítico y autogestionado de la UPTAIET.
+                        </div>
+                        <div class="bg-slate-900/90 p-3.5 rounded-xl border border-slate-700">
+                            <span class="font-bold text-indigo-300 block mb-1">Misión Alma Mater (IUTAI a UPTAIET):</span>
+                            Proceso de transformación para municipalizar la educación superior e integrar proyectos sociotecnológicos directo en comunidades.
+                        </div>
+                        <div class="bg-slate-900/90 p-3.5 rounded-xl border border-slate-700">
+                            <span class="font-bold text-indigo-300 block mb-1">Las 4 Fases Secuenciales del PST:</span>
+                            1. Diagnóstico Comunitario ➔ 2. Planificación y Diseño ➔ 3. Desarrollo (Código) ➔ 4. Socialización y Evaluación.
+                        </div>
+                        <div class="bg-slate-900/90 p-3.5 rounded-xl border border-slate-700">
+                            <span class="font-bold text-indigo-300 block mb-1">Prelectura y Parafraseo:</span>
+                            <strong>Prelectura:</strong> Escaneo inicial de estructura.<br>
+                            <strong>Parafraseo:</strong> Explicar conceptos con tus propias palabras sin copiar textualmente.
+                        </div>
+                    </div>
+                </div>
+
+                <div class="space-y-3">
+                    <h4 class="text-sm font-bold text-amber-400 uppercase tracking-wide">2. Ejemplos Resueltos en los PDF de la Tarea</h4>
+                    <div class="space-y-2 text-xs">
+                        <div class="bg-slate-900/80 p-3.5 rounded-xl border border-slate-700">
+                            <span class="font-bold text-emerald-400 block mb-1">Ejemplo A: Ensayo Uslar Pietri - "El Tamaño del Mundo":</span>
+                            El vocabulario no es adorno; determina el tamaño directo del pensamiento y la capacidad de análisis crítico.
+                        </div>
+                        <div class="bg-slate-900/80 p-3.5 rounded-xl border border-slate-700">
+                            <span class="font-bold text-emerald-400 block mb-1">Ejemplo B: Ciclo de Vida del Software (SDLC):</span>
+                            1. Planificación ➔ 2. Análisis y Diseño ➔ 3. Codificación ➔ 4. Pruebas ➔ 5. Despliegue y Mantenimiento.
+                        </div>
+                        <div class="bg-slate-900/80 p-3.5 rounded-xl border border-slate-700">
+                            <span class="font-bold text-emerald-400 block mb-1">Ejemplo C: Clasificación Doble y Bases de Datos:</span>
+                            Hardware vs Software en ramas simétricas. Clave Primaria (Primary Key) identifica registros de forma única e irrepetible.
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 
-        <!-- Vista de Pregunta Individual -->
+        <!-- Indicador de Progreso -->
+        <div id="progress-container" class="mb-6">
+            <div class="flex justify-between items-center text-xs font-semibold text-slate-300 mb-2">
+                <span id="progress-text">Pregunta 1</span>
+                <span id="progress-percent" class="text-indigo-400 font-bold">0%</span>
+            </div>
+            <div class="w-full bg-slate-800 h-2.5 rounded-full overflow-hidden border border-slate-700">
+                <div id="progress-bar" class="bg-indigo-500 h-full rounded-full transition-all duration-300 w-0"></div>
+            </div>
+        </div>
+
+        <!-- Tarjeta de Pregunta -->
         <div id="question-card" class="bg-slate-800 border border-slate-700 rounded-2xl p-5 sm:p-7 shadow-xl fade-in space-y-6">
             <div class="flex items-start space-x-3">
-                <span id="q-number" class="flex-shrink-0 bg-indigo-500/20 text-indigo-400 font-bold text-xs sm:text-sm px-2.5 py-1 rounded-lg border border-indigo-500/30">P1</span>
+                <span id="q-number" class="flex-shrink-0 bg-indigo-500/20 text-indigo-300 font-bold text-xs sm:text-sm px-2.5 py-1 rounded-lg border border-indigo-500/30">P1</span>
                 <h3 id="q-text" class="text-white font-semibold text-base sm:text-lg leading-snug">Cargando pregunta...</h3>
             </div>
 
-            <!-- Opciones de respuesta -->
             <div id="options-container" class="space-y-3">
                 <!-- Inyectado vía JS -->
             </div>
 
-            <!-- Retroalimentación inmediata -->
             <div id="instant-feedback" class="hidden p-4 rounded-xl text-xs sm:text-sm border fade-in"></div>
 
-            <!-- Botón Siguiente Pregunta -->
             <div class="flex justify-end pt-2">
                 <button id="next-btn" onclick="nextQuestion()" disabled class="w-full sm:w-auto px-6 py-2.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold rounded-xl transition-all shadow-md flex items-center justify-center space-x-2 text-sm">
                     <span>Siguiente Pregunta</span>
@@ -112,9 +242,10 @@
             </div>
         </div>
 
+        <!-- Resumen Final -->
         <div id="final-summary" class="hidden space-y-6 fade-in">
             <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 sm:p-8 shadow-2xl text-center space-y-4">
-                <div id="score-circle" class="inline-flex items-center justify-center w-24 h-24 rounded-full bg-indigo-500/10 border-4 border-indigo-500 text-indigo-400 font-extrabold text-3xl shadow-inner">
+                <div id="score-circle" class="inline-flex items-center justify-center w-24 h-24 rounded-full bg-indigo-500/10 border-4 border-indigo-500 text-indigo-300 font-extrabold text-3xl shadow-inner">
                     0%
                 </div>
                 <h3 id="result-message" class="text-xl sm:text-2xl font-bold text-white">¡Examen Evaluado!</h3>
@@ -127,13 +258,12 @@
                 </div>
             </div>
 
-            <!-- Lista completa de revisión -->
             <div class="bg-slate-800 border border-slate-700 rounded-2xl p-5 sm:p-6 shadow-xl space-y-4">
                 <h4 class="text-base sm:text-lg font-bold text-white flex items-center space-x-2 border-b border-slate-700 pb-3">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 002 2h2a2 2 0 002-2" />
                     </svg>
-                    <span>Resumen Completo del Examen</span>
+                    <span>Resumen Detallado del Examen</span>
                 </h4>
                 <div id="summary-list" class="space-y-4">
                     <!-- Inyectado vía JS -->
@@ -155,11 +285,12 @@
     </footer>
 
     <script>
-        // Cuestionarios extraídos exclusivamente de los PDFs oficiales
+        // Cuestionarios sincronizados con el index.html y módulos plus
         const quizData = {
             1: {
                 title: "PDF 1: Guía de Ejercicios Resueltos Paso a Paso",
                 desc: "Evaluación sobre el Rol del Desarrollador, la Misión Alma Mater y los Componentes del Sistema.",
+                shuffleOptions: false,
                 questions: [
                     {
                         id: 1,
@@ -199,6 +330,7 @@
             2: {
                 title: "PDF 2: Guía Práctica de Aula y Repaso Completa",
                 desc: "Evaluación sobre el Proyecto Sociotecnológico (PST) y la metodología de Mapas Conceptuales.",
+                shuffleOptions: false,
                 questions: [
                     {
                         id: 1,
@@ -227,6 +359,7 @@
             3: {
                 title: "PDF 3: Módulo de Repaso General y Ruta YouTube",
                 desc: "Evaluación sobre reglas de oro, bienestar estudiantil y conceptos generales de la unidad.",
+                shuffleOptions: false,
                 questions: [
                     {
                         id: 1,
@@ -262,39 +395,341 @@
                         justification: "Las palabras de enlace explican la relación lógica entre conceptos y deben ser claras y cortas."
                     }
                 ]
+            },
+            4: {
+                title: "Tarea PDF: Módulo Integral de Tareas Enviadas",
+                desc: "Examen integral exhaustivo que cubre de punta a punta todo el contenido de los PDFs de tarea enviados.",
+                shuffleOptions: true,
+                questions: [
+                    {
+                        id: 1,
+                        question: "Según el Módulo de Lectura N° 1, ¿por qué la Misión Alma Mater sustituye el término 'alumno' por 'participante'?",
+                        options: [
+                            { key: 'a', text: "Porque 'alumno' significa 'sin luz' (pasivo), mientras que el universitario es un adulto activo en autogestión." },
+                            { key: 'b', text: "Porque 'alumno' es un término exclusivo de secundaria." },
+                            { key: 'c', text: "Para denotar que los profesores no dan clases." }
+                        ],
+                        correct: 'a',
+                        justification: "El Módulo N° 1 recalca que el 'participante' toma las riendas de su propio aprendizaje de forma consciente."
+                    },
+                    {
+                        id: 2,
+                        question: "¿Cuáles son las 4 Fases secuenciales obligatorias del Proyecto Sociotecnológico (PST)?",
+                        options: [
+                            { key: 'a', text: "1. Diagnóstico, 2. Planificación, 3. Desarrollo, 4. Socialización / Evaluación." },
+                            { key: 'b', text: "1. Codificación, 2. Venta, 3. Diseño, 4. Evaluación." },
+                            { key: 'c', text: "1. Encuestas, 2. Entrevistas, 3. Tesis, 4. Graduación." }
+                        ],
+                        correct: 'a',
+                        justification: "Secuencia extraída de la pág. 2 del Módulo de Lectura N° 1 para abordar comunidades."
+                    },
+                    {
+                        id: 3,
+                        question: "En la Guía Práctica de Aula N° 1, ¿en qué consiste la técnica del 'Parafraseo'?",
+                        options: [
+                            { key: 'a', text: "En copiar textualmente las palabras del autor." },
+                            { key: 'b', text: "En reescribir y explicar con tus palabras lo comprendido manteniendo la fidelidad." },
+                            { key: 'c', text: "En traducir el texto a otro idioma." }
+                        ],
+                        correct: 'b',
+                        justification: "El parafraseo demuestra interiorización real del concepto expresándolo con vocabulario propio."
+                    },
+                    {
+                        id: 4,
+                        question: "En el ensayo 'El tamaño del mundo' de Uslar Pietri, ¿cuál es el argumento central del autor?",
+                        options: [
+                            { key: 'a', text: "El vocabulario condiciona y limita directamente la capacidad de pensamiento y análisis crítico." },
+                            { key: 'b', text: "Tener más palabras no influye en la inteligencia." },
+                            { key: 'c', text: "La tecnología destruye la capacidad de hablar." }
+                        ],
+                        correct: 'a',
+                        justification: "Uslar Pietri sostiene que el tamaño del mundo de cada persona equivale al tamaño de su vocabulario."
+                    },
+                    {
+                        id: 5,
+                        question: "En el Ciclo de Vida del Desarrollo de Software (SDLC) visto en los ejemplos, ¿cuál es el orden correcto?",
+                        options: [
+                            { key: 'a', text: "Planificación ➔ Análisis y Diseño ➔ Codificación ➔ Pruebas ➔ Mantenimiento." },
+                            { key: 'b', text: "Codificación ➔ Pruebas ➔ Planificación ➔ Diseño." },
+                            { key: 'c', text: "Mantenimiento ➔ Análisis ➔ Pruebas ➔ Planificación." }
+                        ],
+                        correct: 'a',
+                        justification: "El SDLC exige definir costos/objetivos (Planificación) antes de diseñar, codificar y probar."
+                    },
+                    {
+                        id: 6,
+                        question: "En una Base de Datos Relacional, ¿qué función cumple la Clave Primaria (Primary Key)?",
+                        options: [
+                            { key: 'a', text: "Identificar de forma única e irrepetible cada registro dentro de una tabla." },
+                            { key: 'b', text: "Guardar copias de seguridad en internet." },
+                            { key: 'c', text: "Unir la pantalla con el disco duro." }
+                        ],
+                        correct: 'a',
+                        justification: "La Primary Key evita registros duplicados garantizando la integridad de datos."
+                    }
+                ]
+            },
+            5: {
+                title: "Por Si Acaso: Criterios Metodológicos y Extra del Profesor",
+                desc: "Evaluación enfocada en prevenciones, detalles de evaluación del profesor y errores comunes.",
+                shuffleOptions: true,
+                questions: [
+                    {
+                        id: 1,
+                        question: "Si en un examen el profesor observa un párrafo de 4 líneas dentro de una casilla de mapa conceptual, ¿por qué lo sancionará?",
+                        options: [
+                            { key: 'a', text: "Violó la Regla de Oro N° 1 (máximo 1 a 3 palabras por casilla)." },
+                            { key: 'b', text: "Porque faltó colocarle color a la casilla." },
+                            { key: 'c', text: "Porque no usó bolígrafo rojo." }
+                        ],
+                        correct: 'a',
+                        justification: "La regla de oro exige síntesis estricta; las oraciones largas son penalizadas por el profesor."
+                    },
+                    {
+                        id: 2,
+                        question: "¿Por qué las palabras de enlace sobre las líneas deben ir en minúsculas y sin cajas alrededor?",
+                        options: [
+                            { key: 'a', text: "Para diferenciarlas visualmente de los conceptos clave (sustantivos en casillas)." },
+                            { key: 'b', text: "Es un error del sistema que no importa." },
+                            { key: 'c', text: "Porque así lo exige el lenguaje C++." }
+                        ],
+                        correct: 'a',
+                        justification: "Los conectores sirven de unión gramatical entre las casillas de conceptos."
+                    },
+                    {
+                        id: 3,
+                        question: "¿Cuál de las siguientes acciones arruina la jerarquía vertical de un mapa conceptual?",
+                        options: [
+                            { key: 'a', text: "Colocar un concepto secundario más arriba que el concepto principal inclusivo." },
+                            { key: 'b', text: "Escribir conectores en minúscula." },
+                            { key: 'c', text: "Usar de 1 a 3 palabras." }
+                        ],
+                        correct: 'a',
+                        justification: "La jerarquía exige que los conceptos más generales e inclusivos se ubiquen en la parte superior."
+                    }
+                ]
+            },
+            6: {
+                title: "🔥 Examen Real: Simulacro Definitivo Acumulativo",
+                desc: "Examen integral completo con preguntas de los primeros 3 PDFs y de TODOS los PDFs de las tareas.",
+                shuffleOptions: true,
+                questions: [
+                    {
+                        id: 1,
+                        question: "Según la Misión Alma Mater y el PNFI, ¿cuál es la concepción real de la Informática frente al mito tradicional?",
+                        options: [
+                            { key: 'a', text: "Mito: Reparar PCs e instalar software. Realidad: Ciencia de automatización para transformar la sociedad." },
+                            { key: 'b', text: "Mito: Carrera universitaria. Realidad: Curso de ofimática." },
+                            { key: 'c', text: "Mito: Programar redes. Realidad: Venta de computadoras." }
+                        ],
+                        correct: 'a',
+                        justification: "El PNFI enfoca la informática como herramienta transformadora al servicio de la comunidad."
+                    },
+                    {
+                        id: 2,
+                        question: "En las 4 Fases del PST, ¿cuál es el objetivo de la Fase IV (Socialización y Evaluación)?",
+                        options: [
+                            { key: 'a', text: "Entregar el software a la comunidad y evaluar su impacto real en la solución del problema." },
+                            { key: 'b', text: "Comprar las computadoras de la institución." },
+                            { key: 'c', text: "Comenzar el levantamiento de encuestas." }
+                        ],
+                        correct: 'a',
+                        justification: "En la Fase IV la comunidad valida e implementa la solución tecnológica desarrollada."
+                    },
+                    {
+                        id: 3,
+                        question: "Según las Reglas de Oro, ¿cuántas palabras como máximo se permiten por casilla en un mapa conceptual?",
+                        options: [
+                            { key: 'a', text: "De 1 a 3 palabras." },
+                            { key: 'b', text: "De 5 a 10 palabras." },
+                            { key: 'c', text: "No hay límite de palabras." }
+                        ],
+                        correct: 'a',
+                        justification: "Regla estricta de síntesis para garantizar la claridad sintáctica del diagrama."
+                    },
+                    {
+                        id: 4,
+                        question: "En el ensayo 'El tamaño del mundo' de Arturo Uslar Pietri, ¿qué representa la pobreza del vocabulario?",
+                        options: [
+                            { key: 'a', text: "El empobrecimiento de la conciencia y la limitación del pensamiento crítico." },
+                            { key: 'b', text: "Un detalle estético sin trascendencia." },
+                            { key: 'c', text: "Una ventaja para el desarrollo técnico." }
+                        ],
+                        correct: 'a',
+                        justification: "El autor sostiene que el lenguaje es la herramienta misma del razonamiento mental."
+                    },
+                    {
+                        id: 5,
+                        question: "En el Ciclo de Vida del Desarrollo de Software (SDLC), ¿qué ocurre en la fase de 'Análisis y Diseño'?",
+                        options: [
+                            { key: 'a', text: "Se definen los requerimientos del usuario y se estructuran la arquitectura e interfaz." },
+                            { key: 'b', text: "Se reemplazan las piezas averiadas de la PC." },
+                            { key: 'c', text: "Se realiza la venta del producto final." }
+                        ],
+                        correct: 'a',
+                        justification: "En esta fase se traducen las necesidades del usuario en esquemas y modelos del software."
+                    },
+                    {
+                        id: 6,
+                        question: "En una Base de Datos Relacional, ¿qué diferencia a una Primary Key de una Foreign Key?",
+                        options: [
+                            { key: 'a', text: "La Primary Key identifica registros en su propia tabla; la Foreign Key enlaza con otra tabla." },
+                            { key: 'b', text: "La Primary Key solo guarda letras; la Foreign Key solo números." },
+                            { key: 'c', text: "No hay ninguna diferencia técnica." }
+                        ],
+                        correct: 'a',
+                        justification: "La Foreign Key crea las relaciones entre tablas garantizando la integridad referencial."
+                    },
+                    {
+                        id: 7,
+                        question: "¿Qué caracteriza al 'Mantenimiento Preventivo' frente al 'Correctivo'?",
+                        options: [
+                            { key: 'a', text: "El Preventivo se ejecuta ANTES de la falla; el Correctivo actúa DESPUÉS de la avería." },
+                            { key: 'b', text: "El Preventivo es más costoso y destructivo." },
+                            { key: 'c', text: "Ambos se hacen al mismo tiempo sin planificar." }
+                        ],
+                        correct: 'a',
+                        justification: "El mantenimiento preventivo programa inspecciones periódicas para evitar averías."
+                    },
+                    {
+                        id: 8,
+                        question: "¿Qué representa la 'Territorialización de la Educación' impulsada por la Misión Alma Mater?",
+                        options: [
+                            { key: 'a', text: "Llevar la universidad a los municipios para responder a las necesidades locales." },
+                            { key: 'b', text: "Prohibir la educación a distancia." },
+                            { key: 'c', text: "Centralizar todas las instituciones en la capital." }
+                        ],
+                        correct: 'a',
+                        justification: "Permite la articulación directa de la educación con el entorno comunitario específico."
+                    },
+                    {
+                        id: 9,
+                        question: "Al leer una proposición en un mapa conceptual (Nodo 1 + Conector + Nodo 2), ¿qué debe formar?",
+                        options: [
+                            { key: 'a', text: "Una oración con sentido de afirmación coherente." },
+                            { key: 'b', text: "Una fórmula matemática de tres variables." },
+                            { key: 'c', text: "Una lista desordenada de términos." }
+                        ],
+                        correct: 'a',
+                        justification: "Las proposiciones expresan afirmaciones completas con significado lógico."
+                    },
+                    {
+                        id: 10,
+                        question: "¿Qué servicios integrales brinda el área de Bienestar Estudiantil en la UPTAIET?",
+                        options: [
+                            { key: 'a', text: "Soporte médico, orientación psicológica, deporte, cultura y becas socioeconómicas." },
+                            { key: 'b', text: "Venta de componentes de computadoras." },
+                            { key: 'c', text: "Cobro de aranceles universitarios." }
+                        ],
+                        correct: 'a',
+                        justification: "Atiende las necesidades integrales del estudiante durante toda su trayectoria universitaria."
+                    },
+                    {
+                        id: 11,
+                        question: "¿Por qué en un mapa conceptual dos conceptos se ubican horizontalmente en la misma línea?",
+                        options: [
+                            { key: 'a', text: "Tienen la misma jerarquía dentro de una clasificación paralela." },
+                            { key: 'b', text: "Significa que un concepto reemplaza al otro." },
+                            { key: 'c', text: "Es un error tipográfico de dibujo." }
+                        ],
+                        correct: 'a',
+                        justification: "El alineamiento en el mismo nivel denota igual jerarquía estructural."
+                    },
+                    {
+                        id: 12,
+                        question: "En la lectura de textos técnicos, ¿cuál es la secuencia recomendada antes de diagramar?",
+                        options: [
+                            { key: 'a', text: "1. Prelectura ➔ 2. Subrayado de Sustantivos ➔ 3. Diagramación con Conectores." },
+                            { key: 'b', text: "1. Dibujar casillas ➔ 2. Leer el texto completo ➔ 3. Memorizar." },
+                            { key: 'c', text: "1. Copiar párrafos ➔ 2. Subrayar verbos ➔ 3. Colorear." }
+                        ],
+                        correct: 'a',
+                        justification: "Secuencia analítica recomendada para abstraer la estructura esencial de cualquier documento."
+                    }
+                ]
             }
         };
 
         let currentQuizId = 1;
         let currentQuestionIndex = 0;
         let userAnswers = {};
+        let currentRenderedOptions = [];
         let isOptionSelected = false;
+
+        function togglePlusSection() {
+            const section = document.getElementById('plus-material-section');
+            section.classList.toggle('hidden');
+            
+            const plusBtn = document.getElementById('tab-btn-plus');
+            if (!section.classList.contains('hidden')) {
+                plusBtn.className = "px-3 py-1.5 text-xs font-bold rounded-lg transition-all bg-amber-500 text-slate-950 shadow";
+            } else {
+                updateTabStyles(currentQuizId);
+            }
+        }
+
+        function updateTabStyles(quizNum) {
+            for (let i = 1; i <= 3; i++) {
+                const btn = document.getElementById(`tab-btn-${i}`);
+                if (btn) {
+                    btn.className = (i === quizNum)
+                        ? "px-3 py-1.5 text-xs font-semibold rounded-lg transition-all bg-indigo-600 text-white shadow"
+                        : "px-3 py-1.5 text-xs font-semibold rounded-lg transition-all text-slate-400 hover:text-white";
+                }
+            }
+            const plusBtn = document.getElementById('tab-btn-plus');
+            if (plusBtn) {
+                if (quizNum >= 4) {
+                    plusBtn.className = "px-3 py-1.5 text-xs font-bold rounded-lg transition-all bg-amber-500 text-slate-950 shadow";
+                } else {
+                    plusBtn.className = "px-3 py-1.5 text-xs font-bold rounded-lg transition-all bg-amber-500/20 text-amber-300 border border-amber-500/40 hover:bg-amber-500/30";
+                }
+            }
+        }
 
         function selectQuiz(quizNum) {
             currentQuizId = quizNum;
+            document.getElementById('plus-material-section').classList.add('hidden');
+            updateTabStyles(quizNum);
             restartCurrentQuiz();
-
-            for (let i = 1; i <= 3; i++) {
-                const btn = document.getElementById(`tab-btn-${i}`);
-                if (i === quizNum) {
-                    btn.className = "flex-1 sm:flex-none px-3 sm:px-4 py-2 text-xs font-semibold rounded-lg transition-all bg-indigo-600 text-white shadow";
-                } else {
-                    btn.className = "flex-1 sm:flex-none px-3 sm:px-4 py-2 text-xs font-semibold rounded-lg transition-all text-slate-400 hover:text-white";
-                }
-            }
 
             document.getElementById('quiz-title').innerText = quizData[quizNum].title;
             document.getElementById('quiz-desc').innerText = quizData[quizNum].desc;
-            updateBestScoreDisplay();
+            updateDashboardScores();
         }
 
-        function updateBestScoreDisplay() {
-            const bestScore = localStorage.getItem(`uptaiet_quiz_best_${currentQuizId}`);
-            const display = document.getElementById('best-score-display');
-            if (bestScore !== null) {
-                display.innerText = `${bestScore}%`;
+        function updateDashboardScores() {
+            let totalBestScoreSum = 0;
+
+            for (let i = 1; i <= 6; i++) {
+                const bestScore = localStorage.getItem(`uptaiet_quiz_best_${i}`);
+                const badge = document.getElementById(`score-badge-${i}`);
+
+                if (bestScore !== null) {
+                    const numScore = parseInt(bestScore);
+                    if (badge) badge.innerText = `${numScore}%`;
+                    totalBestScoreSum += numScore;
+                } else {
+                    if (badge) badge.innerText = "---";
+                }
+            }
+
+            const activeBestScore = localStorage.getItem(`uptaiet_quiz_best_${currentQuizId}`);
+            document.getElementById('best-score-display').innerText = (activeBestScore !== null) ? `${activeBestScore}%` : "---";
+
+            const globalPercent = Math.round(totalBestScoreSum / 6);
+            document.getElementById('global-progress-percent').innerText = `${globalPercent}%`;
+
+            const statusTag = document.getElementById('global-status-tag');
+            if (globalPercent >= 90) {
+                statusTag.innerText = "¡Excelente / Listo! 🎉";
+                statusTag.className = "text-xs font-bold px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/40";
+            } else if (globalPercent >= 60) {
+                statusTag.innerText = "Aprobado / Avanzando 👍";
+                statusTag.className = "text-xs font-bold px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40";
             } else {
-                display.innerText = "---";
+                statusTag.innerText = "En Preparación 📚";
+                statusTag.className = "text-xs font-bold px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/40";
             }
         }
 
@@ -332,20 +767,33 @@
 
             const nextBtn = document.getElementById('next-btn');
             nextBtn.disabled = true;
-            nextBtn.querySelector('span').innerText = (currentQuestionIndex === total - 1) ? "Finalizar y Ver Resumen" : "Siguiente Pregunta";
+            nextBtn.querySelector('span').innerText = (currentQuestionIndex === total - 1) ? "Finalizar y Ver Resultados" : "Siguiente Pregunta";
 
             const feedbackDiv = document.getElementById('instant-feedback');
             feedbackDiv.className = "hidden p-4 rounded-xl text-xs sm:text-sm border fade-in";
             feedbackDiv.innerHTML = "";
 
+            let displayOptions = [...q.options];
+
+            if (quiz.shuffleOptions) {
+                for (let i = displayOptions.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [displayOptions[i], displayOptions[j]] = [displayOptions[j], displayOptions[i]];
+                }
+            }
+
+            currentRenderedOptions = displayOptions;
+
+            const labels = ['a', 'b', 'c', 'd'];
             const container = document.getElementById('options-container');
             let html = '';
 
-            q.options.forEach(opt => {
+            displayOptions.forEach((opt, idx) => {
+                const displayLabel = labels[idx];
                 html += `
-                    <button onclick="handleOptionSelect('${opt.key}')" id="opt-btn-${opt.key}" class="w-full text-left p-3.5 sm:p-4 rounded-xl border border-slate-700 bg-slate-900/60 hover:bg-slate-700/50 hover:border-indigo-500/50 transition-all flex items-start space-x-3 group">
-                        <span class="flex-shrink-0 w-6 h-6 rounded-lg bg-slate-800 border border-slate-600 text-indigo-400 font-bold text-xs flex items-center justify-center uppercase group-hover:bg-indigo-600 group-hover:text-white group-hover:border-indigo-600 transition-all">${opt.key}</span>
-                        <span class="text-xs sm:text-sm text-slate-200 group-hover:text-white pt-0.5 leading-relaxed">${opt.text}</span>
+                    <button onclick="handleOptionSelect('${opt.key}', '${displayLabel}')" id="opt-btn-${opt.key}" class="w-full text-left p-3.5 sm:p-4 rounded-xl border border-slate-700 bg-slate-900/90 hover:bg-slate-700/60 hover:border-indigo-500/60 transition-all flex items-start space-x-3 group">
+                        <span class="flex-shrink-0 w-6 h-6 rounded-lg bg-slate-800 border border-slate-600 text-indigo-300 font-bold text-xs flex items-center justify-center uppercase group-hover:bg-indigo-600 group-hover:text-white group-hover:border-indigo-600 transition-all">${displayLabel}</span>
+                        <span class="text-xs sm:text-sm text-slate-100 group-hover:text-white pt-0.5 leading-relaxed">${opt.text}</span>
                     </button>
                 `;
             });
@@ -353,45 +801,51 @@
             container.innerHTML = html;
         }
 
-        function handleOptionSelect(key) {
+        function handleOptionSelect(selectedKey, displayLabel) {
             if (isOptionSelected) return;
             isOptionSelected = true;
 
             const quiz = quizData[currentQuizId];
             const q = quiz.questions[currentQuestionIndex];
-            userAnswers[currentQuestionIndex] = key;
+            userAnswers[currentQuestionIndex] = selectedKey;
 
-            const isCorrect = key === q.correct;
+            const isCorrect = selectedKey === q.correct;
             const feedbackDiv = document.getElementById('instant-feedback');
-            const selectedBtn = document.getElementById(`opt-btn-${key}`);
+            const selectedBtn = document.getElementById(`opt-btn-${selectedKey}`);
 
             if (isCorrect) {
-                selectedBtn.className = "w-full text-left p-3.5 sm:p-4 rounded-xl border-2 border-emerald-500 bg-emerald-950/30 flex items-start space-x-3 transition-all";
-                feedbackDiv.className = "p-4 rounded-xl text-xs sm:text-sm border border-emerald-500/40 bg-emerald-950/40 text-emerald-300 fade-in";
+                if (selectedBtn) {
+                    selectedBtn.className = "w-full text-left p-3.5 sm:p-4 rounded-xl border-2 border-emerald-500 bg-emerald-950/60 flex items-start space-x-3 transition-all";
+                }
+                feedbackDiv.className = "p-4 rounded-xl text-xs sm:text-sm border border-emerald-500/40 bg-emerald-950/80 text-emerald-200 fade-in";
                 feedbackDiv.innerHTML = `<div class="font-bold flex items-center space-x-2 mb-1">
-                    <span>¡Respuesta Correcta! 🎉</span>
+                    <span>¡Correcto! 🎉</span>
                 </div>
                 <div>${q.justification}</div>`;
             } else {
-                selectedBtn.className = "w-full text-left p-3.5 sm:p-4 rounded-xl border-2 border-rose-500 bg-rose-950/30 flex items-start space-x-3 transition-all";
+                if (selectedBtn) {
+                    selectedBtn.className = "w-full text-left p-3.5 sm:p-4 rounded-xl border-2 border-rose-500 bg-rose-950/60 flex items-start space-x-3 transition-all";
+                }
                 
                 const correctBtn = document.getElementById(`opt-btn-${q.correct}`);
                 if (correctBtn) {
-                    correctBtn.className = "w-full text-left p-3.5 sm:p-4 rounded-xl border-2 border-emerald-500/70 bg-emerald-950/20 flex items-start space-x-3 transition-all";
+                    correctBtn.className = "w-full text-left p-3.5 sm:p-4 rounded-xl border-2 border-emerald-500/80 bg-emerald-950/40 flex items-start space-x-3 transition-all";
                 }
 
-                feedbackDiv.className = "p-4 rounded-xl text-xs sm:text-sm border border-rose-500/40 bg-rose-950/40 text-rose-300 fade-in";
+                feedbackDiv.className = "p-4 rounded-xl text-xs sm:text-sm border border-rose-500/40 bg-rose-950/80 text-rose-200 fade-in";
                 feedbackDiv.innerHTML = `<div class="font-bold flex items-center space-x-2 mb-1">
-                    <span>Respuesta Incorrecta ❌</span>
+                    <span>Incorrecto ❌</span>
                 </div>
-                <div>La opción correcta era la <strong>(${q.correct.toUpperCase()})</strong>. ${q.justification}</div>`;
+                <div>${q.justification}</div>`;
             }
 
             q.options.forEach(opt => {
                 const btn = document.getElementById(`opt-btn-${opt.key}`);
-                btn.onclick = null;
-                btn.classList.remove('hover:bg-slate-700/50', 'hover:border-indigo-500/50', 'cursor-pointer');
-                btn.classList.add('cursor-default');
+                if (btn) {
+                    btn.onclick = null;
+                    btn.classList.remove('hover:bg-slate-700/60', 'hover:border-indigo-500/60', 'cursor-pointer');
+                    btn.classList.add('cursor-default');
+                }
             });
 
             feedbackDiv.classList.remove('hidden');
@@ -425,17 +879,17 @@
                 const correctOptObj = q.options.find(o => o.key === q.correct);
 
                 summaryHtml += `
-                    <div class="p-4 rounded-xl border ${isCorrect ? 'bg-slate-900/50 border-emerald-500/40' : 'bg-slate-900/50 border-rose-500/40'} space-y-2 text-xs sm:text-sm">
+                    <div class="p-4 rounded-xl border ${isCorrect ? 'bg-slate-900/90 border-emerald-500/40' : 'bg-slate-900/90 border-rose-500/40'} space-y-2 text-xs sm:text-sm">
                         <div class="flex items-start justify-between gap-2">
-                            <p class="font-semibold text-white"><span class="text-indigo-400 mr-1">${idx + 1}.</span> ${q.question}</p>
-                            <span class="flex-shrink-0 px-2 py-0.5 rounded text-[11px] font-bold uppercase ${isCorrect ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-rose-500/20 text-rose-400 border border-rose-500/30'}">
+                            <p class="font-semibold text-white"><span class="text-indigo-300 mr-1">${idx + 1}.</span> ${q.question}</p>
+                            <span class="flex-shrink-0 px-2 py-0.5 rounded text-[11px] font-bold uppercase ${isCorrect ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-rose-500/20 text-rose-300 border border-rose-500/30'}">
                                 ${isCorrect ? 'Correcta' : 'Incorrecta'}
                             </span>
                         </div>
                         
-                        <div class="pl-3 border-l-2 ${isCorrect ? 'border-emerald-500/50' : 'border-rose-500/50'} space-y-1 text-slate-300">
-                            <p><strong>Tu respuesta:</strong> <span class="${isCorrect ? 'text-emerald-300 font-medium' : 'text-rose-300 font-medium'}">(${userAns.toUpperCase()}) ${userOptObj ? userOptObj.text : ''}</span></p>
-                            ${!isCorrect ? `<p><strong>Respuesta correcta:</strong> <span class="text-emerald-300 font-medium">(${q.correct.toUpperCase()}) ${correctOptObj ? correctOptObj.text : ''}</span></p>` : ''}
+                        <div class="pl-3 border-l-2 ${isCorrect ? 'border-emerald-500/50' : 'border-rose-500/50'} space-y-1 text-slate-200">
+                            <p><strong>Tu respuesta:</strong> <span class="${isCorrect ? 'text-emerald-300 font-medium' : 'text-rose-300 font-medium'}">${userOptObj ? userOptObj.text : '-'}</span></p>
+                            ${!isCorrect ? `<p><strong>Respuesta correcta:</strong> <span class="text-emerald-300 font-medium">${correctOptObj ? correctOptObj.text : ''}</span></p>` : ''}
                             <p class="text-slate-400 text-xs pt-1"><em>${q.justification}</em></p>
                         </div>
                     </div>
@@ -443,8 +897,6 @@
             });
 
             const percentage = Math.round((score / quiz.questions.length) * 100);
-
-            // Gestión de récord y logros
             const previousBest = localStorage.getItem(`uptaiet_quiz_best_${currentQuizId}`);
             let isNewAchievement = false;
 
@@ -453,12 +905,12 @@
                 isNewAchievement = true;
             }
 
-            updateBestScoreDisplay();
+            updateDashboardScores();
 
             if (isNewAchievement) {
                 showAchievementToast(previousBest === null 
-                    ? `¡Primer intento completado en ${quizData[currentQuizId].title.split(':')[0]} con ${percentage}%!` 
-                    : `¡Superaste tu récord anterior de ${previousBest}% subiendo a ${percentage}%! 🔥`
+                    ? `¡Primer intento con ${percentage}%!` 
+                    : `¡Nuevo récord personal: ${percentage}%! 🔥`
                 );
             }
 
@@ -470,34 +922,80 @@
 
             if (percentage === 100) {
                 message.innerText = "¡Puntaje Perfecto! 🚀";
-                detail.innerText = `Dominaste el cuestionario respondiendo ${score} de ${quiz.questions.length} preguntas correctamente (${percentage}%). ¡Excelente preparación!`;
-                scoreCircle.className = "inline-flex items-center justify-center w-24 h-24 rounded-full bg-emerald-500/10 border-4 border-emerald-500 text-emerald-400 font-extrabold text-3xl shadow-inner";
+                detail.innerText = `Respondiste ${score} de ${quiz.questions.length} preguntas correctamente (${percentage}%). ¡Dominio total del tema!`;
+                scoreCircle.className = "inline-flex items-center justify-center w-24 h-24 rounded-full bg-emerald-500/10 border-4 border-emerald-500 text-emerald-300 font-extrabold text-3xl shadow-inner";
             } else if (percentage >= 60) {
-                message.innerText = "¡Buen Trabajo! 👍";
-                detail.innerText = `Obtuviste ${score} de ${quiz.questions.length} aciertos (${percentage}%). Revisa las observaciones para perfeccionar tus conceptos.`;
-                scoreCircle.className = "inline-flex items-center justify-center w-24 h-24 rounded-full bg-amber-500/10 border-4 border-amber-500 text-amber-400 font-extrabold text-3xl shadow-inner";
+                message.innerText = "¡Aprobado! 👍";
+                detail.innerText = `Obtuviste ${score} de ${quiz.questions.length} aciertos (${percentage}%). Revisa el compendio para asegurar el 100%.`;
+                scoreCircle.className = "inline-flex items-center justify-center w-24 h-24 rounded-full bg-amber-500/10 border-4 border-amber-500 text-amber-300 font-extrabold text-3xl shadow-inner";
             } else {
-                message.innerText = "Necesitas Repasar Más 📚";
-                detail.innerText = `Obtuviste ${score} de ${quiz.questions.length} aciertos (${percentage}%). Te recomendamos repasar el contenido del PDF y volver a intentarlo.`;
-                scoreCircle.className = "inline-flex items-center justify-center w-24 h-24 rounded-full bg-rose-500/10 border-4 border-rose-500 text-rose-400 font-extrabold text-3xl shadow-inner";
+                message.innerText = "Necesitas Repasar 📚";
+                detail.innerText = `Obtuviste ${score} de ${quiz.questions.length} aciertos (${percentage}%). Te recomendamos leer el Compendio de Estudio.`;
+                scoreCircle.className = "inline-flex items-center justify-center w-24 h-24 rounded-full bg-rose-500/10 border-4 border-rose-500 text-rose-300 font-extrabold text-3xl shadow-inner";
             }
 
             document.getElementById('summary-list').innerHTML = summaryHtml;
             document.getElementById('final-summary').classList.remove('hidden');
         }
 
+        // LÓGICA DE SWIPE TIPO ANDROID PARA LA NOTIFICACIÓN
+        const toast = document.getElementById('achievement-toast');
+        let startX = 0;
+        let currentX = 0;
+        let isSwiping = false;
+
+        toast.addEventListener('touchstart', (e) => {
+            startX = e.touches[0].clientX;
+            isSwiping = true;
+            toast.style.transition = 'none';
+        }, { passive: true });
+
+        toast.addEventListener('touchmove', (e) => {
+            if (!isSwiping) return;
+            currentX = e.touches[0].clientX;
+            const diffX = currentX - startX;
+
+            if (diffX > 0) {
+                toast.style.transform = `translate(calc(-50% + ${diffX}px), 0)`;
+                toast.style.opacity = `${1 - (diffX / 250)}`;
+            }
+        }, { passive: true });
+
+        toast.addEventListener('touchend', () => {
+            if (!isSwiping) return;
+            isSwiping = false;
+            const diffX = currentX - startX;
+
+            toast.style.transition = 'transform 0.2s ease-out, opacity 0.2s ease-out';
+
+            if (diffX > 100) {
+                hideAchievementToast();
+            } else {
+                toast.style.transform = 'translate(-50%, 0)';
+                toast.style.opacity = '1';
+            }
+        });
+
         function showAchievementToast(text) {
-            const toast = document.getElementById('achievement-toast');
             document.getElementById('achievement-text').innerText = text;
+            toast.style.transform = 'translate(-50%, 0)';
+            toast.style.opacity = '1';
             toast.classList.remove('hidden');
 
             setTimeout(() => {
-                toast.classList.add('hidden');
-            }, 4500);
+                hideAchievementToast();
+            }, 5000);
+        }
+
+        function hideAchievementToast() {
+            toast.classList.add('hidden');
+            toast.style.transform = 'translate(-50%, 0)';
+            toast.style.opacity = '1';
         }
 
         window.onload = function() {
             selectQuiz(1);
+            updateDashboardScores();
         };
     </script>
 </body>
